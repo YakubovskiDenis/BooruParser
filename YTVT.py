@@ -1,6 +1,8 @@
 import requests
 import os
 import time
+import asyncio
+from telegaSpam import SendAfterParse
 def download_image(url, id, artist, save_dir,file_ext):
     os.makedirs(save_dir, exist_ok=True)
     file_path = os.path.join(save_dir, f"{id}-{artist}.{file_ext}")
@@ -19,6 +21,8 @@ def GetImagesList(IPname,SaveDir):
         for key, value in response.items():
             IMG_variants = response['media_asset']
             id = response['id']
+            if not IMG_variants.get('variants'):
+                continue
             for variant in IMG_variants['variants']:
                 if variant['type'] == 'original':
                     url = variant['url']
@@ -36,11 +40,17 @@ def GetImagesList(IPname,SaveDir):
             break
  
 def BooruFetch():
-    GetImagesList("honkai%3A_star_rail","HSR")
+    DirNames=["HSR","Arknights","ZZZ","GFL","GI"]
+    GetImagesList("honkai%3A_star_rail", "HSR")
+    asyncio.run(SendAfterParse(DirNames[0]))
     GetImagesList("arknights","Arknights")
+    asyncio.run(SendAfterParse(DirNames[1]))
     GetImagesList("zenless_zone_zero","ZZZ")
+    asyncio.run(SendAfterParse(DirNames[2]))
     GetImagesList("girls%27_frontline","GFL")
+    asyncio.run(SendAfterParse(DirNames[3]))
     GetImagesList("genshin_impact","GI")
+    asyncio.run(SendAfterParse(DirNames[4]))
 
 while True:
     #блок по работе с данбору
