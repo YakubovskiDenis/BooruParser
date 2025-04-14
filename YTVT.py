@@ -39,6 +39,12 @@ def GetImagesList(IPname,SaveDir):
             download_image(url,id,artist,SaveDir,fileExt)
             break
  
+def GetLinksTranslated(IPname):
+    response2list = requests.get(f"https://danbooru.donmai.us/posts.json?tags={IPname}+translated&limit=20&page=1").json()
+    for response in response2list:
+        for key, value in response.items():
+            print(key, value)
+
 def BooruFetch():
     DirNames=["HSR","Arknights","ZZZ","GFL","GI"]
     GetImagesList("honkai%3A_star_rail", "HSR")
@@ -51,10 +57,12 @@ def BooruFetch():
     asyncio.run(SendAfterParse(DirNames[3]))
     GetImagesList("genshin_impact","GI")
     asyncio.run(SendAfterParse(DirNames[4]))
+    
 
 while True:
     #блок по работе с данбору
-    BooruFetch()
+    GetLinksTranslated("Arknights")
+    #BooruFetch()
     print("Цикл сохранения изображений пройден. Перехожу в сон.")
     time.sleep(EXECUTION_TIMEOUT)#регулирует частоту запросов на бору
 

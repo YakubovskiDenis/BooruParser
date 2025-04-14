@@ -14,3 +14,7 @@ async def SendAfterParse(ParentDir: str):
         for file in files:
             Resphoto = open(f'{ParentDir}/{file}', 'rb')
             await bot.send_document(chat_id=CHATID,disable_notification=True, document=Resphoto)
+
+async def SendLinksToTranslated(link: str):
+    async with bot:
+        await bot.send_message(chat_id=CHATID,disable_notification=True, text={link})
