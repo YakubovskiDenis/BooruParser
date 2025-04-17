@@ -23,6 +23,90 @@ def download_image(url, id, artist, save_dir, file_ext):
     except Exception as e:
         print(f"Ошибка: {e}")
 
+def DownloadVideosFromTag(Tagname: str):
+    page = 0
+    with ThreadPoolExecutor(MAX_THREADS) as executor:
+        while True:
+
+            try:
+                response = requests.get(
+                    f"https://danbooru.donmai.us/posts.json?tags={Tagname}+video&limit=100&page={page}",
+                    timeout=10
+                    )
+                reslist = response.json()
+            except Exception as e:
+                print(f"Ошибка запроса {e}")
+                break
+            
+            if not reslist:
+                print("Нет больше постов")
+                break
+            
+            tasks = []
+
+            for post in reslist:
+                try:
+                    id = post.get('id', '0')
+                    ext = post.get('file_ext','mp4')
+                    artist = post.get('tag_string_artist', 'unknown').replace('/', '_') or "unknown"
+                    
+                    variants = post.get('media_asset', {}).get('variants', [])
+                    for variant in variants:
+                        if variant.get('type') == 'original':
+                            url = variant.get('url')
+                            break
+                    
+                    if not url:
+                        url = post.get('large_file_url')
+
+                    if url:
+                        tasks.append(
+                            executor.submit(download_image, url, id, artist, Tagname, ext)
+                        )
+                except Exception as e:
+                    print(f"Ошибка {e}")
+            
+            for task in as_completed(tasks):
+                task.result()
+
+            page +=1
+
+def SingleTagInfo(Tag: str):
+    response = requests.get(
+        f"https://danbooru.donmai.us/tags.json?commit=Search&search%5Bhide_empty%5D=yes&search%5Bname_or_alias_matches%5D={Tag}&search%5Border%5D=date",
+        10)
+    tagEntity = response.json()
+    print(tagEntity[0].get('name'))
+    print(tagEntity[0].get('post_count'))
+
+def GetInfoAboutAllTags():
+    page = 0
+    while True:
+        response = requests.get(
+            f"https://danbooru.donmai.us/tags.json?limit=100&page=1",
+            10)
+        tagList = response.json()
+
+        if not tagList:
+            print("Закончили со всеми")
+        reslist = []
+        for tag in tagList:
+            if tag.get('post_count',"") == 0:
+                continue
+            name =tag.get('name',"")
+            count =tag.get('post_count',"")
+            tagList = []
+            tagList = [name, count]
+            reslist.append(tagList)
+            print(f"{name}: {count}")
+            #print(reslist)
+
+        reslist.sort(key=lambda x: x.sort())
+        print(reslist)
+        #with open("tags.txt", "wb") as file:
+                #file.write()
+
+        page+=1
 
 def downloadallfromsingletag(Tagname: str):
     page = 1
@@ -41,6 +125,7 @@ def downloadallfromsingletag(Tagname: str):
                 break
 
             if not response2list:
+                executor.shutdown()
                 print("Больше нет постов.")
                 break
 
@@ -130,9 +215,11 @@ def BooruFetch():
     asyncio.run(SendAfterParse(DirNames[3]))
     GetImagesList("genshin_impact","GI")
     asyncio.run(SendAfterParse(DirNames[4]))
-    
 
-downloadallfromsingletag("maiqo")
+GetInfoAboutAllTags()    
+#GetAllTags("Arknights")
+#downloadallfromsingletag("maiqo")
+#DownloadVideosFromTag("Arknights")
 
 #while True:
     #блок по работе с данбору
